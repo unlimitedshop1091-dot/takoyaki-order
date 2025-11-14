@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Takoyaki UNLIMITED Order (Flat Delivery)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for custom music generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    :root {
+      --accent: #ef4444; /* red-500 */
+    }
+    body {
+      background-color: #0c0a09; /* neutral-900 */
+      color: #fafafa; /* neutral-50 */
+      font-family: 'Inter', sans-serif;
+    }
+    .card {
+      background-color: #1c1917; /* neutral-800 */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border: 1px solid #292524; /* neutral-800 */
+    }
+    input[type=text], input[type=number], select, textarea {
+      background-color: #292524; /* neutral-800 */
+      border: 1px solid #44403c; /* neutral-700 */
+      color: #fafafa;
+    }
+    .btn-submit {
+      background-color: var(--accent);
+      color: #1c1917;
+      transition: background-color 0.15s;
+    }
+    .btn-submit:hover {
+      background-color: #dc2626; /* red-600 */
+    }
+    .tts-loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+    /* Menggunakan border hijau untuk upgrade */
+    .upgrade-choice-card {
+        border: 2px dashed #34d399; /* emerald-400 */
+        background-color: #1c1917;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-md mx-auto">
+    <header class="text-center mb-6">
+      <p class="text-3xl text-yellow-400 font-extrabold uppercase tracking-widest">TAKOYAKI UNLIMITED: rasa Unlimited</p>
+    </header>
+
+    <!-- Muzik Latar Belakang -->
+    <div class="mb-4 flex justify-center space-x-2">
+        <button type="button" id="musicBtn" class="bg-stone-700 hover:bg-stone-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-lg">
+            ▶️ Mainkan Jingle Latar Belakang
+        </button>
+    </div>
+
+    <form id="orderForm" autocomplete="off" class="space-y-4">
+      
+      <!-- Nama Pemesan -->
+      <div>
+        <label for="name" class="block text-sm font-medium mb-1">Nama Pemesan <span class="text-red-400">*</span></label>
+        <input id="name" name="name" type="text" placeholder="Cth: EJAN mold" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+      </div>
+      
+      <!-- LOKASI PICKUP -->
+      <div>
+        <label for="flatUnit" class="block text-sm font-medium mb-1">Lokasi Pickup <span class="text-red-400">*</span></label>
+        <input id="flatUnit" name="flatUnit" type="text" placeholder="Cth: Blok A-3-5, atau Alamat Penuh (Sila nyatakan dengan jelas)" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+      </div>
+
+      <!-- 1. Pilihan Set (Radio Buttons) -->
+      <div>
+        <label class="block text-sm font-medium mb-2">1. Pilih Set <span class="text-red-400">*</span></label>
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Set Biasa (5 Biji) -->
+          <label class="card p-3 rounded-lg cursor-pointer transition-all hover:border-red-500 border-2 border-transparent has-[:checked]:border-red-500">
+            <input type="radio" name="setChoice" value="5" required class="hidden">
+            <div class="text-lg font-bold">Set Biasa (5 Biji)</div>
+            <div class="text-red-400 font-semibold">RM 6.00</div>
+          </label>
+          <!-- Set Jimat (12 Biji) -->
+          <label class="card p-3 rounded-lg cursor-pointer transition-all hover:border-red-500 border-2 border-transparent has-[:checked]:border-red-500">
+            <input type="radio" name="setChoice" value="12" required class="hidden">
+            <div class="text-lg font-bold">Set Jimat (12 Biji)</div>
+            <div class="text-red-400 font-semibold">RM 11.00</div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. Perisa (Inti) -->
+      <div>
+        <label for="perisa" class="block text-sm font-medium mb-1">2. Perisa (Inti) <span class="text-red-400">*</span></label>
+        <select id="perisa" name="perisa" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+          <option value="">-- Pilih Inti --</option>
+          <option>Mix (Campur Semua Inti)</option>
+          <option>Ayam</option>
+          <option>Daging</option>
+          <option>Sotong</option>
+          <option>Udang</option>
+          <option>Ketam</option>
+          <option>Custom (Sila nyatakan di Nota)</option>
+        </select>
+      </div>
+
+      <!-- 3. Rasa (Sos) - NACHO CHEESE DIALIHKAN KE BAHAGIAN EXTRA -->
+      <div>
+        <label for="rasa" class="block text-sm font-medium mb-1">3. Pilihan Rasa (Sos) <span class="text-red-400">*</span></label>
+        <select id="rasa" name="rasa" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+          <option value="">-- Pilih Sos --</option>
+          <option value="Original (Ori)">Original (Ori)</option>
+          <option value="Spicy (Pedas)">Spicy (Pedas) (+RM 1.00)</option>
+          <!-- Nacho Cheese telah dialihkan ke Seksyen 4 -->
+        </select>
+      </div>
+      
+      <!-- 4. Pilihan Tambahan (Ekstra) - CAJ BERGANTUNG PADA PILIHAN -->
+      <div>
+        <label class="block text-sm font-medium mb-2">4. Pilihan Tambahan (Ekstra) <span class="text-emerald-400 font-semibold">(Caj bergantung pada pilihan)</span></label>
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Extra Nacho Cheese (RM 2.00) -->
+          <label class="upgrade-choice-card p-3 rounded-lg cursor-pointer transition-all hover:border-yellow-500 border-2 border-transparent has-[:checked]:border-yellow-500">
+            <input type="checkbox" name="extraChoice" value="Nacho Cheese" class="form-checkbox text-red-500 rounded hidden">
+            <div class="text-base font-bold text-yellow-400">Ekstra Sos Nacho Cheese (Swiss Bear)</div>
+            <p class="text-xs text-stone-400 mb-1">Sos keju Nacho berkualiti tinggi yang creamy.</p>
+            <div class="text-sm font-semibold text-stone-300">+ RM 2.00</div>
+          </label>
+          <!-- Extra Mayo (RM 1.00) -->
+          <label class="upgrade-choice-card p-3 rounded-lg cursor-pointer transition-all hover:border-emerald-500 border-2 border-transparent has-[:checked]:border-emerald-500">
+            <input type="checkbox" name="extraChoice" value="Mayo" class="form-checkbox text-red-500 rounded hidden">
+            <div class="text-base font-bold text-emerald-300">Ekstra Mayo</div>
+            <p class="text-xs text-stone-400 mb-1">Tambahan mayonis berkrim untuk rasa lebih padu.</p>
+            <div class="text-sm font-semibold text-stone-300">+ RM 1.00</div>
+          </label>
+          <!-- NEW: Extra Chili Mayo (RM 1.00) -->
+          <label class="upgrade-choice-card p-3 rounded-lg cursor-pointer transition-all hover:border-emerald-500 border-2 border-transparent has-[:checked]:border-emerald-500">
+            <input type="checkbox" name="extraChoice" value="Chili Mayo" class="form-checkbox text-red-500 rounded hidden">
+            <div class="text-base font-bold text-emerald-300">Ekstra Chili Mayo</div>
+            <p class="text-xs text-stone-400 mb-1">Tambahan mayonis pedas berkrim (sedikit pedas).</p>
+            <div class="text-sm font-semibold text-stone-300">+ RM 1.00</div>
+          </label>
+          <!-- Extra Flakes (RM 1.00) -->
+          <label class="upgrade-choice-card p-3 rounded-lg cursor-pointer transition-all hover:border-emerald-500 border-2 border-transparent has-[:checked]:border-emerald-500">
+            <input type="checkbox" name="extraChoice" value="Flakes" class="form-checkbox text-red-500 rounded hidden">
+            <div class="text-base font-bold text-emerald-300">Ekstra Katsuobushi Flakes</div>
+            <p class="text-xs text-stone-400 mb-1">Lebih banyak empingan bonito (ikan) beraroma yang menari di atas takoyaki.</p>
+            <div class="text-sm font-semibold text-stone-300">+ RM 1.00</div>
+          </label>
+        </div>
+      </div>
+      
+      <!-- 5. Kuantiti (Set) -->
+      <div>
+        <label for="qty" class="block text-sm font-medium mb-1">5. Kuantiti (Contoh: 2 set) <span class="text-red-400">*</span></label>
+        <input id="qty" name="qty" type="number" min="1" value="1" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+        <p class="text-xs text-stone-400 mt-1">Masukkan jumlah set yang dikehendaki.</p>
+      </div>
+
+      <!-- 6. Nota Tambahan -->
+      <div>
+        <label for="note" class="block text-sm font-medium mb-1">6. Nota Tambahan (Cth: waktu ambil)</label>
+        <textarea id="note" name="note" placeholder="Sila nyatakan nota di sini." class="w-full p-2 rounded-lg"></textarea>
+      </div>
+
+      <!-- 7. Bayaran -->
+      <div>
+        <label for="bayar" class="block text-sm font-medium mb-1">7. Cara Bayaran <span class="text-red-400">*</span></label>
+        <!-- MEMO PENTING: Bayar Dahulu -->
+        <p class="mb-2 p-2 bg-red-900/50 text-red-300 font-bold rounded-lg text-xs text-center border border-red-800">
+            ⚠️ PERHATIAN: Pesanan hanya akan diproses selepas pembayaran diterima.
+        </p>
+        <select id="bayar" name="bayar" required class="w-full p-2 rounded-lg focus:ring-red-500 focus:border-red-500">
+          <option value="">-- Pilih Cara Bayaran --</option>
+          <option>Online Transfer (Akaun Bank)</option>
+          <option>QR Code (DuitNow / eWallet)</option>
+        </select>
+      </div>
+
+      <!-- Pengesahan -->
+      <div class="pt-2">
+        <label class="flex items-center space-x-2 text-sm">
+          <input id="confirm" name="confirm" type="checkbox" required class="form-checkbox text-red-500 rounded focus:ring-red-500">
+          <span class="text-stone-300">Saya faham dan bersetuju untuk buat pembayaran dahulu.</span>
+        </label>
+      </div>
+
+      <!-- Ringkasan Bayaran (Pecahan) -->
+      <div id="breakdownSummary" class="mt-4 pt-2 border-t border-stone-700 space-y-1 text-sm text-right">
+        <p id="subtotalLine" class="text-stone-300">Subtotal Takoyaki: RM 0.00</p>
+        <div id="extraChargesList" class="space-y-1">
+            <!-- Caj tambahan (Sos Pedas/Cheese & Ekstra) akan dipaparkan di sini -->
+        </div>
+        <p id="totalFinal" class="text-lg font-bold text-red-300 pt-1 border-t border-stone-700">TOTAL AKHIR: RM 0.00</p>
+      </div>
+      
+      <!-- Butang Pengesahan Audio (TTS) -->
+      <button type="button" id="ttsBtn" class="w-full py-3 rounded-xl font-bold text-sm tracking-wide mt-3 bg-red-800/50 text-red-100 hover:bg-red-700/70 transition-colors">
+        ✨ Dengar Pengesahan Order
+      </button>
+
+      <!-- Butang Hantar (WhatsApp) -->
+      <button type="button" id="waBtn" class="btn-submit w-full py-3 rounded-xl font-bold text-lg tracking-wide mt-3">
+        Hantar Pesanan via WhatsApp
+      </button>
+      
+    </form>
+  </div>
+
+  <script>
+    // Constants
+    const ADMIN_NUMBER = '60193143791'; 
+    const PRICES = { "5": 6.00, "12": 11.00 }; 
+    const UPGRADE_PRICE = 1.00; // Harga untuk Ekstra (Mayo/Chili Mayo/Flakes)
+    const SPICY_CHARGE = 1.00; // Caj untuk Sos Pedas (Masih dari Seksyen 3)
+    const CHEESE_CHARGE = 2.00; // Caj untuk Sos Nacho Cheese (Kini dari SeksyEN 4)
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key='; 
+    const API_KEY = ""; 
+
+    // DOM Elements
+    const form = document.getElementById('orderForm');
+    const waBtn = document.getElementById('waBtn');
+    const ttsBtn = document.getElementById('ttsBtn');
+    const musicBtn = document.getElementById('musicBtn');
+    
+    // Breakdown elements
+    const subtotalLine = document.getElementById('subtotalLine');
+    const extraChargesList = document.getElementById('extraChargesList');
+    const totalFinal = document.getElementById('totalFinal');
+
+    // Music State and Tone.js Setup (kept as before)
+    let isMusicPlaying = false;
+    let synth = null;
+    let loop = null;
+
+    function setupMusic() {
+        if (synth === null) {
+            synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 }
+            }).toDestination();
+            synth.volume.value = -10;
+            const scale = ["C4", "Eb4", "F4", "G4", "Bb4"];
+            const melody = [ scale[0], null, scale[2], null, scale[3], null, scale[4], null, scale[3], scale[2], scale[0], null, scale[0], scale[1], null, null ];
+            let noteIndex = 0;
+            loop = new Tone.Loop(time => {
+                const note = melody[noteIndex % melody.length];
+                if (note !== null) synth.triggerAttackRelease(note, "8n", time);
+                const bassNotes = ["C3", "F3", "G3", "C3"];
+                if (noteIndex % 4 === 0) new Tone.Synth({ oscillator: { type: "triangle" }, volume: -20 }).toDestination().triggerAttackRelease(bassNotes[(noteIndex/4) % bassNotes.length], "4n", time);
+                noteIndex++;
+            }, "8n").start(0);
+            Tone.Transport.bpm.value = 115;
+        }
+    }
+    
+    function toggleMusic() {
+        if (Tone.Transport.state !== 'started') {
+            Tone.start();
+            setupMusic();
+        }
+        if (isMusicPlaying) {
+            Tone.Transport.pause();
+            musicBtn.textContent = '▶️ Mainkan Jingle Latar Belakang';
+            isMusicPlaying = false;
+        } else {
+            Tone.Transport.start();
+            musicBtn.textContent = '⏸️ Hentikan Muzik Latar Belakang';
+            isMusicPlaying = true;
+        }
+    }
+
+    // Utility Functions (kept)
+    function base64ToArrayBuffer(base64) {
+        const binaryString = atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+        return bytes.buffer;
+    }
+
+    function pcmToWav(pcm16, sampleRate) {
+        const numChannels = 1, bitsPerSample = 16;
+        const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+        const blockAlign = numChannels * (bitsPerSample / 8);
+        const dataSize = pcm16.length * 2;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+        let offset = 0;
+        view.setUint32(offset, 0x52494646, false); offset += 4;
+        view.setUint32(offset, 36 + dataSize, true); offset += 4;
+        view.setUint32(offset, 0x57415645, false); offset += 4;
+        view.setUint32(offset, 0x666d7420, false); offset += 4;
+        view.setUint32(offset, 16, true); offset += 4;
+        view.setUint16(offset, 1, true); offset += 2;
+        view.setUint16(offset, numChannels, true); offset += 2;
+        view.setUint32(offset, sampleRate, true); offset += 4;
+        view.setUint32(offset, byteRate, true); offset += 4;
+        view.setUint16(offset, blockAlign, true); offset += 2;
+        view.setUint16(offset, bitsPerSample, true); offset += 2;
+        view.setUint32(offset, 0x64617461, false); offset += 4;
+        view.setUint32(offset, dataSize, true); offset += 4;
+        for (let i = 0; i < pcm16.length; i++) { view.setInt16(offset, pcm16[i], true); offset += 2; }
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    // Core Logic Functions (price calc, breakdown)
+    function calculateTotal() {
+      const setChoice = document.querySelector('input[name="setChoice"]:checked');
+      const qtyInput = document.getElementById('qty');
+      const q = parseInt(qtyInput.value) || 1;
+      const setVal = setChoice ? setChoice.value : null;
+      let subtotal = 0;
+      if (setVal && PRICES[setVal]) subtotal = PRICES[setVal] * q;
+
+      let sauceCharge = 0;
+      let sauceName = '';
+      const rasa = document.getElementById('rasa').value;
+      if (rasa === 'Spicy (Pedas)') { sauceCharge = SPICY_CHARGE; sauceName = 'Sos Pedas'; }
+
+      const selectedExtras = Array.from(document.querySelectorAll('input[name="extraChoice"]:checked'))
+                               .map(input => {
+                                   let price = UPGRADE_PRICE;
+                                   if (input.value === 'Nacho Cheese') price = CHEESE_CHARGE;
+                                   return { name: input.value, price: price };
+                               });
+
+      let totalExtraCharge = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
+
+      extraChargesList.innerHTML = '';
+      let totalAllCharges = 0;
+      if (sauceCharge > 0) {
+          const pSauce = document.createElement('p');
+          pSauce.className = 'text-red-400';
+          pSauce.textContent = `Caj Tambahan (${sauceName}): RM ${sauceCharge.toFixed(2)}`;
+          extraChargesList.appendChild(pSauce);
+          totalAllCharges += sauceCharge;
+      }
+      if (selectedExtras.length > 0) {
+          selectedExtras.forEach(extra => {
+              const p = document.createElement('p');
+              p.className = extra.name === 'Nacho Cheese' ? 'text-yellow-400 font-bold' : 'text-emerald-400';
+              p.textContent = `Ekstra ${extra.name}: RM ${extra.price.toFixed(2)}`;
+              extraChargesList.appendChild(p);
+              totalAllCharges += extra.price;
+          });
+      }
+
+      const total = subtotal + totalAllCharges;
+      subtotalLine.textContent = `Subtotal Takoyaki: RM ${subtotal.toFixed(2)}`;
+      totalFinal.textContent = `TOTAL AKHIR: RM ${total.toFixed(2)}`;
+      // Return details for building message
+      return { subtotal, total, totalExtraCharge, sauceCharge, sauceName, totalAllCharges, selectedExtras, setVal, qty: q, rasa };
+    }
+
+    // Build WhatsApp message in the exact requested layout
+    function buildOrderText(data) {
+      const name = document.getElementById('name').value || '—';
+      const flatUnit = document.getElementById('flatUnit').value || '—';
+      const perisa = document.getElementById('perisa').value || '—';
+      const bayar = document.getElementById('bayar').value || '—';
+      const note = (document.getElementById('note').value || '').trim() || 'Tiada';
+
+      // Set label
+      let setLabel = '—';
+      if (data.setVal === '5') setLabel = '5 biji';
+      if (data.setVal === '12') setLabel = '12 biji';
+
+      // Format extras lines
+      // Sos Utama
+      let sosLine = 'Sos Utama: ' + (data.rasa || '—');
+      if (data.sauceCharge && data.sauceCharge > 0) sosLine += ` (+RM ${data.sauceCharge.toFixed(2)})`;
+
+      // For each extra option, say "Ya (+RM x)" or "Tidak"
+      // Determine whether each extra exists in selectedExtras
+      function hasExtra(name) {
+        return data.selectedExtras.some(e => e.name === name);
+      }
+      const nacho = hasExtra('Nacho Cheese') ? `Ya (+RM ${CHEESE_CHARGE.toFixed(2)})` : 'Tidak';
+      const mayo = hasExtra('Mayo') ? `Ya (+RM ${UPGRADE_PRICE.toFixed(2)})` : 'Tidak';
+      const chilimayo = hasExtra('Chili Mayo') ? `Ya (+RM ${UPGRADE_PRICE.toFixed(2)})` : 'Tidak';
+      const flakes = hasExtra('Flakes') ? `Ya (+RM ${UPGRADE_PRICE.toFixed(2)})` : 'Tidak';
+
+      // Monetary summary
+      const subtotalStr = `RM ${data.subtotal.toFixed(2)}`;
+      const totalExtrasStr = `RM ${data.totalAllCharges.toFixed(2)}`;
+      const totalStr = `RM ${data.total.toFixed(2)}`;
+
+      // Build message exactly as requested
+      const lines = [
+`====================================`,
+`* TAKOYAKI UNLIMITED: ORDER BARU  *`,
+`====================================`,
+`A. MAKLUMAT PEMESAN`,
+`Nama: ${name}`,
+`Lokasi Pickup: ${flatUnit}`,
+`B. PESANAN`,
+`Set: ${data.qty} x ${setLabel}`,
+`Perisa (Inti): ${perisa}`,
+`Pilihan Rasa & Tambahan: `,
+`- ${sosLine}`,
+`- Nacho Cheese: ${nacho}`,
+`- Mayo: ${mayo}`,
+`- Chili Mayo: ${chilimayo}`,
+`- Flakes: ${flakes}`,
+`C. NOTA TAMBAHAN:`,
+`${note}`,
+`====================================`,
+`D. RINGKASAN BAYARAN`,
+`Subtotal Takoyaki: ${subtotalStr}`,
+`Total Caj Tambahan: ${totalExtrasStr}`,
+`TOTAL AKHIR: ${totalStr}`,
+`====================================`,
+`E. PEMBAYARAN`,
+`Kaedah: ${bayar}`,
+`Sila hantar QR Code DuitNow untuk pembayaran.`,
+`Sila hantar resit bayaran untuk pengesahan.`
+      ];
+
+      return lines.join('\n');
+    }
+
+    // TTS (fallback) and Gemini TTS logic kept (fallback to speechSynthesis if no API key)
+    async function generateTTS() {
+        if (!validateOrder()) return;
+        const originalText = ttsBtn.textContent;
+        ttsBtn.textContent = 'Menjana Audio... 🎧';
+        ttsBtn.classList.add('tts-loading');
+
+        const data = calculateTotal();
+        const prompt = buildTTSPrompt(data);
+
+        if (!API_KEY) {
+          // fallback to speechSynthesis
+          speakText(prompt);
+          ttsBtn.textContent = originalText;
+          ttsBtn.classList.remove('tts-loading');
+          return;
+        }
+
+        // existing Gemini TTS call (kept unchanged)
+        const payload = {
+            contents: [{
+                parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+                responseModalities: ["AUDIO"],
+            },
+            model: "gemini-2.5-flash-preview-tts"
+        };
+        let audioUrl = null;
+        for (let i = 0; i < 3; i++) {
+            try {
+                const response = await fetch(API_URL + API_KEY, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000; 
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    audioUrl = URL.createObjectURL(wavBlob);
+                    break;
+                } else {
+                    throw new Error("Missing or invalid audio data/mime type in response.");
+                }
+            } catch (error) {
+                console.error(`Percubaan TTS Gagal (${i + 1}):`, error);
+                if (i < 2) {
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+                } else {
+                    const messageBox = document.createElement('div');
+                    messageBox.textContent = 'Gagal menjana audio. Sila cuba lagi.';
+                    messageBox.className = 'text-center text-sm text-red-500 mt-2';
+                    form.insertBefore(messageBox, ttsBtn.nextSibling);
+                    setTimeout(() => messageBox.remove(), 5000);
+                }
+            }
+        }
+
+        ttsBtn.textContent = originalText;
+        ttsBtn.classList.remove('tts-loading');
+
+        if (audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play();
+            audio.onended = () => URL.revokeObjectURL(audioUrl);
+        }
+    }
+
+    // speakText improved: wait for voices, prefer Malay if available
+    function speakText(text) {
+      if (!text) return;
+      if (!('speechSynthesis' in window)) {
+        alert('SpeechSynthesis not supported in this browser.');
+        return;
+      }
+      function chooseVoice(voices) {
+        let v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ms'));
+        if (v) return v;
+        v = voices.find(v => v.name && (/malay|bahasa/i).test(v.name));
+        if (v) return v;
+        v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+        if (v) return v;
+        return voices[0] || null;
+      }
+      function doSpeak(voices) {
+        const voice = chooseVoice(voices);
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        if (voice) utter.voice = voice;
+        utter.rate = 0.95;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+      }
+      let voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length) {
+        doSpeak(voices);
+        return;
+      }
+      const onVoices = () => {
+        voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length) {
+          window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+          doSpeak(voices);
+        }
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', onVoices);
+      setTimeout(() => {
+        voices = window.speechSynthesis.getVoices() || [];
+        doSpeak(voices);
+        window.speechSynthesis.removeEventListener('voiceschanged', onVoices);
+      }, 900);
+    }
+
+    // TTS prompt builder (kept, uses Malay phrasing)
+    function buildTTSPrompt(data) {
+      const name = document.getElementById('name').value || 'Pelanggan';
+      const flatUnit = document.getElementById('flatUnit').value || 'tidak dinyatakan';
+      const setChoice = data.setVal;
+      const perisa = document.getElementById('perisa').value || 'tiada';
+      const rasa = document.getElementById('rasa').value || 'tiada';
+      const qty = data.qty || 1;
+      const selectedExtras = data.selectedExtras || [];
+
+      let setLabel = setChoice === '5' ? 'Set Biasa 5 biji' : setChoice === '12' ? 'Set Jimat 12 biji' : 'tiada set';
+      let speechText = `Order untuk ${name} dari lokasi ${flatUnit}. ${qty} set, ${setLabel}. Inti ${perisa}. Sos utama ${rasa}.`;
+      if (selectedExtras.length > 0) {
+        const cheese = selectedExtras.find(e => e.name === 'Nacho Cheese');
+        const others = selectedExtras.filter(e => e.name !== 'Nacho Cheese').map(e => e.name).join(', ');
+        if (cheese) speechText += ` Nacho Cheese ditambah (caj dua ringgit).`;
+        if (others) speechText += ` Extra: ${others}.`;
+      }
+      if (data.sauceCharge > 0) speechText += ` Sos pedas dikenakan caj tambahan.`;
+      if (data.totalAllCharges > 0) speechText += ` Jumlah caj tambahan RM ${data.totalAllCharges.toFixed(2)}.`;
+      speechText += ` Jumlah akhir RM ${data.total.toFixed(2)}. Sila buat pembayaran dahulu.`;
+
+      return `Sila dengar pengesahan order anda. ${speechText}`;
+    }
+
+    // Validation (kept)
+    function validateOrder() {
+      if (!form.checkValidity()) {
+        const firstInvalid = form.querySelector(':invalid');
+        if (firstInvalid) firstInvalid.focus();
+        if (!document.querySelector('input[name="setChoice"]:checked')) {
+            console.warn('Sila pilih Set Takoyaki (Set Biasa atau Set Jimat).');
+        } else if (!document.getElementById('confirm').checked) {
+            console.warn('Sila sahkan persetujuan pembayaran anda.');
+        } else {
+            console.warn('Sila lengkapkan semua ruangan bertanda (*).');
+        }
+        return false;
+      }
+      return true;
+    }
+
+    // Send WhatsApp: use new buildOrderText layout
+    function sendWhatsApp() {
+      if (!validateOrder()) return;
+      const data = calculateTotal();
+      const message = buildOrderText(data);
+      const waLink = `https://wa.me/${ADMIN_NUMBER}?text=${encodeURIComponent(message)}`;
+      window.open(waLink, '_blank');
+    }
+
+    // Event Listeners
+    form.addEventListener('change', calculateTotal);
+    form.addEventListener('keyup', calculateTotal);
+    waBtn.addEventListener('click', sendWhatsApp);
+    ttsBtn.addEventListener('click', generateTTS);
+    musicBtn.addEventListener('click', toggleMusic);
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      calculateTotal();
+      if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
+    });
+  </script>
+</body>
+</html>
